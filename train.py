@@ -17,27 +17,26 @@ import utils.tf_utils as tfu
 os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1, 2, 3'
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--debug', action='store_true')
 parser.add_argument('--color', action='store_true')
 opts = parser.parse_args()
 
-TLIST = 'data/train.txt'
-VLIST = 'data/val_500.txt'
+TLIST = 'dataset/train.txt'
+VLIST = 'dataset/val_500.txt'
 
 if opts.color:
-    BSZ = 8
-    MAXITER = 19e5
-    boundaries = [16e5, 17e5]
+    BSZ = 12
+    MAXITER = 14e5
+    boundaries = [6e5, 8e5]
 else:
-    BSZ = 6 # 12
+    BSZ = 6 # 12 for 2 GPUs
     MAXITER = 10e5
     boundaries = [5e5, 7e5]
 
 IMSZ = 128
 LR = 1e-4
 
-debug = True
-
-if debug:
+if opts.debug:
     VALFREQ = 100
     MAXITER = 200
     BSZ = 2
@@ -102,14 +101,20 @@ def _one_step(inputs, training=True):
     noisy, sig_read, sig_shot = tfu.add_read_shot_noise(clean)
     noise_std = tfu.estimate_std(noisy, sig_read, sig_shot)
 
-    noisy_teacher = tf.expand_dims(noisy, -1)
-    noisy_teacher = tf.transpose(noisy_teacher, perm=[0, 3, 1, 2, 4])
-    noisy_t = tf.tile(noisy_teacher, (1, 1, 1, 1, 3))  # b 8 128 128 3
-    noisy_ref = tf.tile(noisy_t[:, :1, ...], (1, 7, 1, 1, 1))
-    noisy_oth = noisy_t[:, 1:, ...]
+    if opts.color:
+        noisy_re = tf.reshape(noisy, (-1, IMSZ, IMSZ, 8, 3))
+        noisy_re = tf.transpose(noisy_re, perm=[0, 3, 1, 2, 4])
+        noisy_ref = tf.tile(noisy_re[:, :1, ...], (1, 7, 1, 1, 1))
+        noisy_oth = noisy_re[:, 1:, ...]
+    else:
+        noisy_exp = tf.expand_dims(noisy, -1)
+        noisy_exp = tf.transpose(noisy_exp, perm=[0, 3, 1, 2, 4])
+        noisy_exp = tf.tile(noisy_exp, (1, 1, 1, 1, 3))  # b 8 128 128 3
+        noisy_ref = tf.tile(noisy_exp[:, :1, ...], (1, 7, 1, 1, 1))
+        noisy_oth = noisy_exp[:, 1:, ...]
 
-    noisy_ref = tf.reshape(noisy_ref, (-1, 128, 128, 3))
-    noisy_oth = tf.reshape(noisy_oth, (-1, 128, 128, 3))
+    noisy_ref = tf.reshape(noisy_ref, (-1, IMSZ, IMSZ, 3))
+    noisy_oth = tf.reshape(noisy_oth, (-1, IMSZ, IMSZ, 3))
 
     aux_denosie_loss = 0
     aux_denosie_gradient_loss = 0
