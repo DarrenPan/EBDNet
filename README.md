@@ -2,7 +2,7 @@
 
 # Requirements
 
-- tensorflow-gpu == 2.5.0
+- tensorflow==2.5.3
 - numpy == 1.19.2
 - opencv_python==4.5.4.60
 - scikit_image==0.17.2
@@ -15,8 +15,10 @@
 
 3. For debug, run:
 ```
-python train.py debug
+python train.py --debug
 ```
+
+The original program runs on 4 GPUs. You can modify 'CUDA_VISIBLE_DEVICES' in the code according to your actual situation.
 
 4. For grayscale burst denoising training, run:
 
@@ -27,7 +29,7 @@ python train.py
 5. For color burst denoising training, run:
 
 ```Python
-python train.py color
+python train.py --color
 ```
 
 
