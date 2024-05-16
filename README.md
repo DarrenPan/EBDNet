@@ -1,4 +1,6 @@
 # EBDNet
+Official TF2 implementation of "[EBDNet: Integrating Optical Flow with Kernel Prediction for Burst Denoising](https://ieeexplore.ieee.org/document/10487901/)", TCSVT 2024
+
 
 # Requirements
 
@@ -35,8 +37,21 @@ python train.py --color
 
 # Testing
 
+1. Download pre-trained models for grayscale and color burst denoising from [here]().
 
+2. Download the grayscale test set provided by Mildenhall et al. from [here](https://drive.google.com/file/d/1UptBXV4f56wMDpS365ydhZkej6ABTFq1/view). Download the color test set supplied by Xia et al. from [here](https://drive.google.com/file/d/1rXmauXa_AW8ZrNiD2QPrbmxcIOfsiONE/view?usp=sharing)
 
+3. For graycale testing with all gains, run:
+
+```Python
+python test_all_gain.py
+```
+
+4. For color testing with all gains, run:
+
+```Python
+python test_all_gain.py --color
+```
 
 # Acknowledgement
 
