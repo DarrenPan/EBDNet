@@ -1,4 +1,4 @@
-# EBDNet
+# EBDNet: Integrating Optical Flow with Kernel Prediction for Burst Denoising
 Official TF2 implementation of "[EBDNet: Integrating Optical Flow with Kernel Prediction for Burst Denoising](https://ieeexplore.ieee.org/document/10487901/)", TCSVT 2024
 
 
