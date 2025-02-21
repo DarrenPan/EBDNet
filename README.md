@@ -37,7 +37,7 @@ python train.py --color
 
 # Testing
 
-1. Download pre-trained models for grayscale and color burst denoising from [here]().
+1. Download pre-trained models for grayscale and color burst denoising from [here](https://drive.google.com/drive/folders/1KMTR32Tx3V0FMu7wyv9gRU0P9uq15i7q?usp=sharing).
 
 2. Download the grayscale test set provided by Mildenhall et al. from [here](https://drive.google.com/file/d/1UptBXV4f56wMDpS365ydhZkej6ABTFq1/view). Download the color test set supplied by Xia et al. from [here](https://drive.google.com/file/d/1rXmauXa_AW8ZrNiD2QPrbmxcIOfsiONE/view?usp=sharing)
 
@@ -59,3 +59,13 @@ This code is based on [bpn](https://github.com/likesum/bpn) and [PWCNet-tf2](htt
 
 
 # Citation
+
+```bibtex
+@article{pan2024ebdnet,
+  title={EBDNet: Integrating Optical Flow With Kernel Prediction for Burst Denoising},
+  author={Pan, Sicheng and Li, Yingming},
+  journal={IEEE Transactions on Circuits and Systems for Video Technology},
+  year={2024},
+  publisher={IEEE}
+}
+```
