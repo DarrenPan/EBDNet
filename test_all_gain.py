@@ -14,11 +14,14 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--color', action='store_true')
+parser.add_argument('--save', action='store_true')
+parser.add_argument('--psnr', default=True, action='store_true')
+parser.add_argument('--ssim', action='store_true')
 opts = parser.parse_args()
 
-cal_ssim = True
-cal_psnr = True
-save_results = False
+cal_ssim = opts.ssim
+cal_psnr = opts.psnr
+save_results = opts.save
 
 gain_ssim_dict = {}
 gain_psnr_dict = {}
@@ -32,15 +35,13 @@ for gain in [1, 2, 4, 8]:
         sig_reads = data['sig_read']
         sig_shots = data['sqrt_sig_shot']
 
-        model_best_path = None
-        model_path = ''
+        model_path = 'experiments/ebdnet/color/model.ckpt-1400000'
 
         bsz = 1
     else:
         print('grayscale testing...')
 
-        data = np.load(
-            'data/synthetic_5d_j2_16_noiselevels6_wide_438x202x320x8.npz')
+        data = np.load('data/synthetic_5d_j2_16_noiselevels6_wide_438x202x320x8.npz')
         split = {1: 2, 2: 3, 4: 4, 8: 5}[gain]
         noisy_bursts = data['noisy'][73 * split:73 * split + 73].astype(np.float32)
         cleans = data['truth'][73 * split:73 * split + 73].astype(np.float32)
@@ -48,12 +49,10 @@ for gain in [1, 2, 4, 8]:
         sig_reads = data['sig_read'][73 * split:73 * split + 73].astype(np.float32)
         sig_shots = data['sig_shot'][73 * split:73 * split + 73].astype(np.float32)
 
-        model_path = ''
-
+        model_path = 'experiments/ebdnet/grayscale/model.ckpt-1000000'
         bsz = 1
 
     model = EBDNet(pretrained=False, color=opts.color)
-    train_cycle = False
 
     optimizer = tf.keras.optimizers.Adam()
     ckpt_best = tf.train.Checkpoint(model=model)
@@ -93,23 +92,22 @@ for gain in [1, 2, 4, 8]:
         h_new, w_new, _ = noisy.shape
 
         if not opts.color:
-            noisy_teacher = tf.expand_dims(noisy, -1)
-            noisy_teacher = tf.expand_dims(noisy_teacher, 0)
-            noisy_teacher = tf.transpose(noisy_teacher, perm=[0, 3, 1, 2, 4])
-            noisy_t = tf.tile(noisy_teacher, (1, 1, 1, 1, 3))
-            noisy_ref = tf.tile(noisy_t[:, :1, ...], (1, 7, 1, 1, 1))
-            noisy_oth = noisy_t[:, 1:, ...]
+            noisy_exp = tf.expand_dims(noisy, -1)
+            noisy_exp = tf.expand_dims(noisy_exp, 0)
+            noisy_exp = tf.transpose(noisy_exp, perm=[0, 3, 1, 2, 4])
+            noisy_exp = tf.tile(noisy_exp, (1, 1, 1, 1, 3))
+            noisy_ref = tf.tile(noisy_exp[:, :1, ...], (1, 7, 1, 1, 1))
+            noisy_oth = noisy_exp[:, 1:, ...]
 
-            noisy_ref = tf.reshape(noisy_ref, (-1, h_new, w_new, 3))
-            noisy_oth = tf.reshape(noisy_oth, (-1, h_new, w_new, 3))
         else:
-            noisy_re = tf.expand_dims(noisy, 0)
-            noisy_re = tf.reshape(noisy_re, (-1, h_new, w_new, 8, 3))
-            noisy_re = tf.transpose(noisy_re, perm=[0, 3, 1, 2, 4])
-            noisy_ref = tf.tile(noisy_re[:, :1, ...], (1, 7, 1, 1, 1))
-            noisy_oth = noisy_re[:, 1:, ...]
-            noisy_ref = tf.reshape(noisy_ref, (-1, h_new, w_new, 3))
-            noisy_oth = tf.reshape(noisy_oth, (-1, h_new, w_new, 3))
+            noisy_exp = tf.expand_dims(noisy, 0)
+            noisy_exp = tf.reshape(noisy_exp, (-1, h_new, w_new, 8, 3))
+            noisy_exp = tf.transpose(noisy_exp, perm=[0, 3, 1, 2, 4])
+            noisy_ref = tf.tile(noisy_exp[:, :1, ...], (1, 7, 1, 1, 1))
+            noisy_oth = noisy_exp[:, 1:, ...]
+
+        noisy_ref = tf.reshape(noisy_ref, (-1, h_new, w_new, 3))
+        noisy_oth = tf.reshape(noisy_oth, (-1, h_new, w_new, 3))
 
         noise_std = tf.expand_dims(noise_std, 0)
 
@@ -144,7 +142,10 @@ for gain in [1, 2, 4, 8]:
         denoise = np.clip(denoise, 0., 1.)[lbuff:-lbuff, lbuff:-lbuff]
 
         if cal_ssim:
-            ssim = SSIM(clean, denoise, gaussian_weights=True, data_range=1.0,  use_sample_covariance=False)
+            if opts.color:
+                ssim = SSIM(clean, denoise, gaussian_weights=True, data_range=1.0,  use_sample_covariance=False, multichannel=True)
+            else:
+                ssim = SSIM(clean, denoise, gaussian_weights=True, data_range=1.0,  use_sample_covariance=False)
         else:
             ssim = 0
         ssims.append(ssim)
